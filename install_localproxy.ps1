@@ -94,51 +94,24 @@ function Download-LocalProxy {
     Write-Step "Downloading localproxy for Windows/$script:ARCH..."
     
     # GitHub repository URL
-    $REPO_URL = "https://github.com/aws-samples/iot-secure-tunneling-localproxy"
+    $REPO_URL = "https://github.com/tyyzqmf/iot-secure-tunneling-localproxy"
     
-    # AWS S3 URL as fallback
-    $AWS_URL = "https://s3.amazonaws.com/aws-iot-device-sdk-secure-tunneling"
+    # Specific version to use
+    $VERSION = "v3.1.2-beta"
     
     # Binary name for Windows
     $BINARY_NAME = "localproxy.exe"
     
-    # Try to download from GitHub releases first
-    try {
-        Write-Step "Attempting to download from GitHub releases..."
-        
-        # Get the latest release tag
-        $LATEST_RELEASE = (Invoke-RestMethod -Uri "https://api.github.com/repos/aws-samples/iot-secure-tunneling-localproxy/releases/latest").tag_name
-        
-        if ($LATEST_RELEASE) {
-            $DOWNLOAD_URL = "$REPO_URL/releases/download/$LATEST_RELEASE/localproxy-windows-$script:ARCH.exe"
-            Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$script:INSTALL_DIR\$BINARY_NAME"
-            Write-Success "Downloaded localproxy from GitHub releases"
-            return
-        }
-    } catch {
-        # Continue to next download method
-    }
+    # Download from GitHub releases
+    Write-Step "Downloading from GitHub releases..."
     
-    # If GitHub download failed, try AWS S3
+    $DOWNLOAD_URL = "$REPO_URL/releases/download/$VERSION/localproxy-windows-$script:ARCH"
+    
     try {
-        Write-Step "Attempting to download from AWS S3..."
-        
-        $DOWNLOAD_URL = "$AWS_URL/localproxy-windows-$script:ARCH.exe"
         Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile "$script:INSTALL_DIR\$BINARY_NAME"
-        Write-Success "Downloaded localproxy from AWS S3"
-        return
+        Write-Success "Downloaded localproxy from GitHub releases"
     } catch {
-        # Continue to next download method
-    }
-    
-    # If both GitHub and AWS downloads failed, try to copy from the current repository
-    Write-Step "Attempting to copy from local repository..."
-    
-    if (Test-Path -Path "bin\windows\$script:ARCH\$BINARY_NAME") {
-        Copy-Item -Path "bin\windows\$script:ARCH\$BINARY_NAME" -Destination "$script:INSTALL_DIR\$BINARY_NAME"
-        Write-Success "Copied localproxy from local repository"
-    } else {
-        Write-Error "Failed to download or find localproxy for Windows/$script:ARCH"
+        Write-Error "Failed to download localproxy for Windows/$script:ARCH from $DOWNLOAD_URL. Error: $_"
     }
 }
 

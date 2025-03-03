@@ -90,10 +90,10 @@ download_localproxy() {
     print_step "Downloading localproxy for $OS/$ARCH..."
     
     # GitHub repository URL
-    REPO_URL="https://github.com/aws-samples/iot-secure-tunneling-localproxy"
+    REPO_URL="https://github.com/tyyzqmf/iot-secure-tunneling-localproxy"
     
-    # AWS S3 URL as fallback
-    AWS_URL="https://s3.amazonaws.com/aws-iot-device-sdk-secure-tunneling"
+    # Specific version to use
+    VERSION="v3.1.2-beta"
     
     # Determine binary name based on OS
     if [[ "$OS" == "windows" ]]; then
@@ -102,53 +102,29 @@ download_localproxy() {
         BINARY_NAME="localproxy"
     fi
     
-    # Try to download from GitHub releases first
-    if command -v curl &> /dev/null; then
-        print_step "Attempting to download from GitHub releases..."
-        
-        # Get the latest release tag
-        LATEST_RELEASE=$(curl -s https://api.github.com/repos/aws-samples/iot-secure-tunneling-localproxy/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
-        
-        if [[ -n "$LATEST_RELEASE" ]]; then
-            DOWNLOAD_URL="$REPO_URL/releases/download/$LATEST_RELEASE/localproxy-$OS-$ARCH"
-            curl -L -o "$INSTALL_DIR/$BINARY_NAME" "$DOWNLOAD_URL"
-            
-            if [[ $? -eq 0 ]]; then
-                print_success "Downloaded localproxy from GitHub releases"
-                return
-            fi
-        fi
-    fi
+    # Download from GitHub releases
+    print_step "Downloading from GitHub releases..."
     
-    # If GitHub download failed, try AWS S3
-    print_step "Attempting to download from AWS S3..."
+    DOWNLOAD_URL="$REPO_URL/releases/download/$VERSION/localproxy-$OS-$ARCH"
     
     if command -v curl &> /dev/null; then
-        DOWNLOAD_URL="$AWS_URL/localproxy-$OS-$ARCH"
         curl -L -o "$INSTALL_DIR/$BINARY_NAME" "$DOWNLOAD_URL"
         
         if [[ $? -eq 0 ]]; then
-            print_success "Downloaded localproxy from AWS S3"
-            return
+            print_success "Downloaded localproxy from GitHub releases"
+        else
+            print_error "Failed to download localproxy for $OS/$ARCH from $DOWNLOAD_URL"
         fi
     elif command -v wget &> /dev/null; then
-        DOWNLOAD_URL="$AWS_URL/localproxy-$OS-$ARCH"
         wget -O "$INSTALL_DIR/$BINARY_NAME" "$DOWNLOAD_URL"
         
         if [[ $? -eq 0 ]]; then
-            print_success "Downloaded localproxy from AWS S3"
-            return
+            print_success "Downloaded localproxy from GitHub releases"
+        else
+            print_error "Failed to download localproxy for $OS/$ARCH from $DOWNLOAD_URL"
         fi
-    fi
-    
-    # If both GitHub and AWS downloads failed, try to copy from the current repository
-    print_step "Attempting to copy from local repository..."
-    
-    if [[ -f "bin/$OS/$ARCH/$BINARY_NAME" ]]; then
-        cp "bin/$OS/$ARCH/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
-        print_success "Copied localproxy from local repository"
     else
-        print_error "Failed to download or find localproxy for $OS/$ARCH"
+        print_error "Neither curl nor wget found. Please install one of them and try again."
     fi
 }
 
