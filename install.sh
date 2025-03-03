@@ -60,33 +60,73 @@ main() {
     
     detect_os
     
-    # Check if the installation scripts exist
-    if [[ ! -f "install_localproxy.sh" ]]; then
-        print_error "Could not find install_localproxy.sh. Please make sure you're running this script from the correct directory."
-    fi
+# GitHub repository URL
+REPO_URL="https://github.com/tyyzqmf/iot-secure-tunneling-localproxy"
+BRANCH="main"
+RAW_URL="https://raw.githubusercontent.com/tyyzqmf/iot-secure-tunneling-localproxy/$BRANCH"
+
+# Create a temporary directory
+TEMP_DIR=$(mktemp -d)
+print_step "Created temporary directory: $TEMP_DIR"
+
+# Function to clean up temporary files
+cleanup() {
+    print_step "Cleaning up temporary files..."
+    rm -rf "$TEMP_DIR"
+    print_success "Cleanup complete"
+}
+
+# Register the cleanup function to be called on exit
+trap cleanup EXIT
+
+# Download the installation scripts
+download_scripts() {
+    print_step "Downloading installation scripts from GitHub..."
     
-    if [[ "$OS" == "windows" ]]; then
-        if [[ ! -f "install_localproxy.ps1" ]]; then
-            print_error "Could not find install_localproxy.ps1. Please make sure you're running this script from the correct directory."
-        fi
+    if command -v curl &> /dev/null; then
+        curl -sSL -o "$TEMP_DIR/install_localproxy.sh" "$RAW_URL/install_localproxy.sh"
+        curl -sSL -o "$TEMP_DIR/install_localproxy.ps1" "$RAW_URL/install_localproxy.ps1"
         
-        print_step "Running Windows installation script..."
-        
-        # Check if PowerShell is available
-        if command -v powershell &> /dev/null; then
-            powershell -ExecutionPolicy Bypass -File ./install_localproxy.ps1
+        if [[ $? -eq 0 ]]; then
+            print_success "Downloaded installation scripts"
         else
-            print_error "PowerShell is not available. Please run install_localproxy.ps1 directly using PowerShell."
+            print_error "Failed to download installation scripts"
+        fi
+    elif command -v wget &> /dev/null; then
+        wget -q -O "$TEMP_DIR/install_localproxy.sh" "$RAW_URL/install_localproxy.sh"
+        wget -q -O "$TEMP_DIR/install_localproxy.ps1" "$RAW_URL/install_localproxy.ps1"
+        
+        if [[ $? -eq 0 ]]; then
+            print_success "Downloaded installation scripts"
+        else
+            print_error "Failed to download installation scripts"
         fi
     else
-        print_step "Running Unix installation script..."
-        
-        # Make the script executable if it's not already
-        chmod +x ./install_localproxy.sh
-        
-        # Run the script
-        ./install_localproxy.sh
+        print_error "Neither curl nor wget found. Please install one of them and try again."
     fi
+}
+
+# Download the scripts
+download_scripts
+
+if [[ "$OS" == "windows" ]]; then
+    print_step "Running Windows installation script..."
+    
+    # Check if PowerShell is available
+    if command -v powershell &> /dev/null; then
+        powershell -ExecutionPolicy Bypass -File "$TEMP_DIR/install_localproxy.ps1"
+    else
+        print_error "PowerShell is not available. Please run install_localproxy.ps1 directly using PowerShell."
+    fi
+else
+    print_step "Running Unix installation script..."
+    
+    # Make the script executable
+    chmod +x "$TEMP_DIR/install_localproxy.sh"
+    
+    # Run the script
+    "$TEMP_DIR/install_localproxy.sh"
+fi
 }
 
 # Run the main function
