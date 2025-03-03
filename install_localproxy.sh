@@ -92,8 +92,16 @@ download_localproxy() {
     # GitHub repository URL
     REPO_URL="https://github.com/tyyzqmf/iot-secure-tunneling-localproxy"
     
-    # Specific version to use
-    VERSION="v3.1.2-beta"
+    # Default version to use
+    DEFAULT_VERSION="v3.1.15"
+    
+    # Check if a version was specified as an argument
+    if [[ -n "$VERSION" ]]; then
+        print_step "Using specified version: $VERSION"
+    else
+        VERSION="$DEFAULT_VERSION"
+        print_step "Using default version: $VERSION"
+    fi
     
     # Determine binary name based on OS
     if [[ "$OS" == "windows" ]]; then

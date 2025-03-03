@@ -54,9 +54,31 @@ detect_os() {
     print_success "Detected operating system: $OS"
 }
 
+# Parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --version=*)
+                VERSION="${1#*=}"
+                shift
+                ;;
+            --version)
+                VERSION="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+}
+
 # Main function
 main() {
     print_step "AWS IoT Secure Tunneling LocalProxy Installer"
+    
+    # Parse command line arguments
+    parse_args "$@"
     
     detect_os
     
@@ -114,7 +136,11 @@ if [[ "$OS" == "windows" ]]; then
     
     # Check if PowerShell is available
     if command -v powershell &> /dev/null; then
-        powershell -ExecutionPolicy Bypass -File "$TEMP_DIR/install_localproxy.ps1"
+        if [[ -n "$VERSION" ]]; then
+            powershell -ExecutionPolicy Bypass -Command "& { \$env:VERSION='$VERSION'; & '$TEMP_DIR/install_localproxy.ps1' }"
+        else
+            powershell -ExecutionPolicy Bypass -File "$TEMP_DIR/install_localproxy.ps1"
+        fi
     else
         print_error "PowerShell is not available. Please run install_localproxy.ps1 directly using PowerShell."
     fi
@@ -124,10 +150,14 @@ else
     # Make the script executable
     chmod +x "$TEMP_DIR/install_localproxy.sh"
     
-    # Run the script
-    "$TEMP_DIR/install_localproxy.sh"
+    # Run the script with version if specified
+    if [[ -n "$VERSION" ]]; then
+        VERSION="$VERSION" "$TEMP_DIR/install_localproxy.sh"
+    else
+        "$TEMP_DIR/install_localproxy.sh"
+    fi
 fi
 }
 
-# Run the main function
-main
+# Run the main function with all arguments
+main "$@"
