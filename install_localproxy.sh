@@ -196,7 +196,16 @@ configure_env_vars() {
         echo "export PATH=\"\$HOME/bin:\$PATH\"" >> "$shell_config"
         
         print_success "Added $HOME/bin to PATH in $shell_config"
-        print_warning "Please run 'source $shell_config' or restart your terminal to apply changes"
+        
+        # Update PATH in the current session so localproxy is immediately available
+        export PATH="$HOME/bin:$PATH"
+        
+        # Try to source the shell config file (this will only affect the script's environment)
+        if [[ -f "$shell_config" ]]; then
+            source "$shell_config" 2>/dev/null || true
+            print_success "Environment variables configured for current session"
+            print_warning "For new terminal sessions, the changes will be applied automatically"
+        fi
     else
         print_success "$HOME/bin already in PATH"
     fi

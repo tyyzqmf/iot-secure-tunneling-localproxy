@@ -133,8 +133,13 @@ function Add-ToPath {
     if (-not $userPath.Contains($script:INSTALL_DIR)) {
         $newPath = "$script:INSTALL_DIR;$userPath"
         [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+        
+        # Update PATH in the current session so localproxy is immediately available
+        $env:PATH = "$script:INSTALL_DIR;$env:PATH"
+        
         Write-Success "Added localproxy directory to PATH"
-        Write-Warning "Please restart your terminal or PowerShell session to apply changes"
+        Write-Success "Environment variables configured for current session"
+        Write-Warning "For new terminal sessions, the changes will be applied automatically"
     } else {
         Write-Success "localproxy directory already in PATH"
     }
